@@ -294,7 +294,10 @@ document.addEventListener('keydown', (e) => {
     // navegación de juegos
     if(e.key === 'ArrowUp'){ e.preventDefault(); gameSelected = (gameSelected -1 + gameOptions.length) % gameOptions.length; updateGameFocus(); }
     else if(e.key === 'ArrowDown'){ e.preventDefault(); gameSelected = (gameSelected +1) % gameOptions.length; updateGameFocus(); }
-    else if(e.key === 'Enter'){ e.preventDefault(); const name = gameOptions[gameSelected].dataset.game; appendLog(`Seleccionado juego: ${name}`); startVirusAnalysis(name); }
+    else if(e.key === 'Enter'){ e.preventDefault(); const name = gameOptions[gameSelected].dataset.game; appendLog(`Seleccionado juego: ${name}`); startVirusAnalysis(name);
+      // al seleccionar un juego y presionar Enter, llevar al usuario al panel de análisis
+      try{ document.getElementById('virusPanel').scrollIntoView({behavior:'smooth', block:'center'}); }catch(err){}
+    }
     else if(e.key === 'Escape'){ e.preventDefault(); appendLog('Volviendo al estado anterior.'); /* no implementado volver atrás complejo */ }
   }
   // en otros modos ignoramos teclas globales (keyinput tiene su propio input)
@@ -517,26 +520,38 @@ function generateFakeVTLines(game){
   return lines.join('\n');
 }
 
-/* Descargar resultado: genera archivo .txt y pide confirmación si malicioso */
+/* Descargar resultado: abre el enlace de MediaFire según juego */
 function setupDownload(gameName){
+  const links = {
+    'Fnaf1': 'https://www.mediafire.com/file/ysyqevytme41unq/Five%252BNights%252Bat%252BFreddys%252B1.rar/file',
+    'Fnaf2': 'https://www.mediafire.com/file/2v9icq5mps81jma/Five%252BNights%252Bat%252BFreddys%252B2.rar/file',
+    'Fnaf3': 'https://www.mediafire.com/file/yli1vwpfm38y22a/Five_Nights_at_Freddys_3.zip/file',
+    'Fnaf4': 'https://www.mediafire.com/file/uto86wrqxtcwzrn/Five+Nights+at+Freddys+4.exe/file'
+  };
+
   downloadBtn.onclick = ()=>{
     const isMalicious = (gameName === 'Fnaf4'); // según datos pegados
     if(isMalicious){
       const ok = confirm('ADVERTENCIA: Este archivo fue reportado como malicioso (trojan). Tu responsabilidad si descargas. ¿Deseas continuar?');
       if(!ok){ appendLog('Descarga cancelada por el usuario.'); return; }
     }
-    const filename = `${gameName}_analysis.txt`;
-    const content = `VirusTotal Analysis - ${gameName}\n\n${vtText.textContent}\n\n-- Fin del archivo --`;
-    const blob = new Blob([content], {type:'text/plain;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    appendLog(`Descarga iniciada: ${filename}`);
+
+    // Mensaje temático pedido por el usuario
+    appendLog('Dirigiendo a MegaFire para descargar tu archivo Buena suerte');
+
+    // abrir enlace en nueva pestaña
+    const url = links[gameName];
+    if(url){
+      try{
+        window.open(url, '_blank');
+        appendLog(`Redirigido a: ${url}`);
+      }catch(e){
+        // fallback
+        window.location.href = url;
+      }
+    } else {
+      appendLog('No se encontró enlace para este juego.');
+    }
   };
 }
 
